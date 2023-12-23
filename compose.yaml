@@ -1,0 +1,83 @@
+version: "3.9"
+services:
+  swag:
+    image: linuxserver/swag
+    container_name: swag
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - URL=tom-callahan.com
+      - SUBDOMAINS=wildcard
+      - EXTRA_DOMAINS=shitcrayon.com,*.shitcrayon.com,pollometer.com,*.pollometer.com,touchnumbersflashcards.com,*.touchnumbersflashcards.com
+      - VALIDATION=dns
+      - PROPAGATION=30
+      - DNSPLUGIN=cloudflare
+      - EMAIL=tom@tom-callahan.com
+      - DHLEVEL=4096
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./swag:/config
+      - ../../static-web-content:/var/www/static-web-content
+    restart: unless-stopped
+
+  ddns:
+    container_name: ddns
+    image: oznu/cloudflare-ddns:latest
+    restart: unless-stopped
+    environment:
+      - API_KEY=7fHxHtmHSXl30JqKrXIoDPFdLgKd-uc3C4rfS3EY
+      - ZONE=tom-callahan.com
+      - PROXIED=true
+
+  # db:
+  #   container_name: db
+  #   image: mariadb
+  #   restart: unless-stopped
+  #   environment:
+  #     MARIADB_DATABASE: wharfratwrites
+  #     MARIADB_ROOT_PASSWORD: my1Mot1478!
+  #     MARIADB_USER: tom
+  #     MARIADB_PASSWORD: my1Mot1478!
+  #   volumes:
+  #     - ../../mysql:/var/lib/mysql
+
+  # adminer:
+  #   container_name: adminer
+  #   image: adminer
+  #   restart: unless-stopped
+  #   ports:
+  #     - 8080:8080
+
+  rpi-node:
+    container_name: rpi-node
+    build: ./node
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    volumes:
+      - ../rpi-node:/node
+    # develop:
+    #   watch:
+    #     - action: rebuild
+    #       path: ./package.json
+    #       target: /code/package.json
+
+  ftp:
+    container_name: ftp
+    image: dotkevinwong/vsftpd-arm
+    restart: unless-stopped
+    environment:
+      FTP_USER: wpbackup_user
+      FTP_PASS: wp1Mot1478!
+      PASV_ADDRESS: ftp.tom-callahan.com
+      PASV_ADDR_RESOLVE: YES
+    volumes:
+      - ../../wp-backups:/home/vsftpd
+    ports:
+      - "20:20"
+      - "21:21"
+      - "21100-21110:21100-21110"
+networks: {}
